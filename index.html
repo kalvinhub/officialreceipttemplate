@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Landscape Receipt - Final Layout</title>
+    <title>Landscape Receipt Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* UI Interface - Hidden from PDF */
@@ -27,18 +27,18 @@
             position: relative;
         }
 
-        /* HEADER - Remains at the very top */
+        /* THICK UNDERLINE FIX FOR HEADER */
         h1 {
             font-size: 34pt;
             margin: 0;
-            text-decoration: underline;
             font-weight: bold;
-            display: block;
+            display: inline-block; /* Required for border to only fit text length */
+            border-bottom: 5px solid black; /* Increased thickness for PDF */
+            line-height: 1.1;
         }
 
-        /* MOVED CONTENT - Date and Rows move down 2 spaces */
         .moved-content {
-            margin-top: 60px; /* This creates the "2 enter spaces" move down */
+            margin-top: 60px;
             display: flex;
             flex-direction: column;
         }
@@ -59,7 +59,7 @@
         }
 
         .label {
-            width: 270px; /* Aligned position */
+            width: 270px;
             font-weight: bold;
             white-space: nowrap;
             flex-shrink: 0;
@@ -67,7 +67,7 @@
 
         .line-fill {
             flex-grow: 1;
-            border-bottom: 2px solid black;
+            border-bottom: 2.5px solid black; /* Standard row thickness */
             padding-left: 8px;
             padding-bottom: 2px;
             min-height: 40px;
@@ -75,15 +75,18 @@
             align-items: flex-end;
         }
 
+        /* THICK UNDERLINE FIX FOR DESCRIPTION */
         .desc-title {
             font-size: 20pt;
             font-weight: bold;
-            text-decoration: underline;
+            display: inline-block; /* Required for border to only fit text length */
+            border-bottom: 3.5px solid black; /* Increased thickness for PDF */
             margin-top: 5px;
             margin-bottom: 15px;
+            line-height: 1.1;
+            width: fit-content;
         }
 
-        /* FOOTER - Remains at the very bottom */
         .footer {
             margin-top: auto;
             font-size: 12pt;
@@ -113,12 +116,12 @@
         <button onclick="generatePDF()">Generate & Download Landscape PDF</button>
     </div>
 
-    <!-- START OF RECEIPT AREA -->
     <div id="receipt-area">
-        <!-- Official Receipt stays at the top -->
-        <h1>Official Receipt</h1>
+        <!-- Header with thick border-bottom -->
+        <div>
+            <h1>Official Receipt</h1>
+        </div>
 
-        <!-- Everything here moves down 2 spaces -->
         <div class="moved-content">
             <div class="date-row">Date: <span id="outDate">5 Jan 2026</span></div>
 
@@ -127,7 +130,10 @@
                 <div class="line-fill" id="outFrom">Ninety Five Kitchen & Laundry</div>
             </div>
 
-            <div class="desc-title">Description:</div>
+            <!-- Description with thick border-bottom -->
+            <div>
+                <div class="desc-title">Description:</div>
+            </div>
 
             <div class="row">
                 <span class="label">Rental Fees -</span>
@@ -156,18 +162,13 @@
             </div>
         </div>
 
-        <!-- Footer stays at the bottom -->
         <div class="footer">
             *THIS IS COMPUTER GENERATED NO SIGNATURE REQUIRED.
         </div>
     </div>
 
     <script>
-        const monthMap = {
-            "jan": "January", "feb": "February", "mar": "March", "apr": "April",
-            "may": "May", "jun": "June", "jul": "July", "aug": "August",
-            "sep": "September", "oct": "October", "nov": "November", "dec": "December"
-        };
+        const monthMap = { "jan": "January", "feb": "February", "mar": "March", "apr": "April", "may": "May", "jun": "June", "jul": "July", "aug": "August", "sep": "September", "oct": "October", "nov": "November", "dec": "December" };
 
         function numberToEnglish(n) {
             const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
@@ -222,7 +223,7 @@
                 margin: 0,
                 filename: 'Official_Receipt.pdf',
                 image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2 },
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
             html2pdf().set(opt).from(element).save();
