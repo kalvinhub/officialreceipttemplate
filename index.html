@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Landscape Receipt - Final Layout</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* UI Interface - Hidden from PDF */
+        body { font-family: Arial, sans-serif; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .controls { background: white; padding: 20px; border-radius: 8px; width: 900px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .controls div { display: flex; flex-direction: column; }
+        .controls label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .controls input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { grid-column: span 2; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        button:hover { background: #218838; }
+
+        /* THE RECEIPT - LANDSCAPE A4 */
+        #receipt-area {
+            background: white;
+            width: 297mm;
+            height: 210mm;
+            padding: 15mm 20mm;
+            box-sizing: border-box;
+            color: black;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* HEADER - Remains at the very top */
+        h1 {
+            font-size: 34pt;
+            margin: 0;
+            text-decoration: underline;
+            font-weight: bold;
+            display: block;
+        }
+
+        /* MOVED CONTENT - Date and Rows move down 2 spaces */
+        .moved-content {
+            margin-top: 60px; /* This creates the "2 enter spaces" move down */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .date-row {
+            text-align: right;
+            font-size: 22pt;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-end;
+            width: 100%;
+            margin-bottom: 18px;
+            font-size: 20pt;
+        }
+
+        .label {
+            width: 270px; /* Aligned position */
+            font-weight: bold;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .line-fill {
+            flex-grow: 1;
+            border-bottom: 2px solid black;
+            padding-left: 8px;
+            padding-bottom: 2px;
+            min-height: 40px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .desc-title {
+            font-size: 20pt;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        /* FOOTER - Remains at the very bottom */
+        .footer {
+            margin-top: auto;
+            font-size: 12pt;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div>
+            <label>Date (e.g. 5 Jan 2026):</label>
+            <input type="text" id="inDate" value="5 Jan 2026">
+        </div>
+        <div>
+            <label>Received From:</label>
+            <input type="text" id="inFrom" value="Ninety Five Kitchen & Laundry">
+        </div>
+        <div>
+            <label>Rental Fees (RM):</label>
+            <input type="number" id="inRental" value="3000">
+        </div>
+        <div>
+            <label>Indah Water (RM):</label>
+            <input type="number" id="inIndah" value="20">
+        </div>
+        <button onclick="generatePDF()">Generate & Download Landscape PDF</button>
+    </div>
+
+    <!-- START OF RECEIPT AREA -->
+    <div id="receipt-area">
+        <!-- Official Receipt stays at the top -->
+        <h1>Official Receipt</h1>
+
+        <!-- Everything here moves down 2 spaces -->
+        <div class="moved-content">
+            <div class="date-row">Date: <span id="outDate">5 Jan 2026</span></div>
+
+            <div class="row">
+                <span class="label">Received From:</span>
+                <div class="line-fill" id="outFrom">Ninety Five Kitchen & Laundry</div>
+            </div>
+
+            <div class="desc-title">Description:</div>
+
+            <div class="row">
+                <span class="label">Rental Fees -</span>
+                <div class="line-fill">
+                    <span>RM</span><span id="outRental">3,000.00</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <span class="label">Indah Water -</span>
+                <div class="line-fill">
+                    <span>RM</span><span id="outIndah">20.00</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <span class="label">The sum of Ringgit:</span>
+                <div class="line-fill">
+                    RM<span id="outTotal">3,020.00</span>&nbsp;(<span id="outWords">Three Thousand Twenty Only</span>)
+                </div>
+            </div>
+
+            <div class="row">
+                <span class="label">Being Payment of:</span>
+                <div class="line-fill" id="outBeing">Rental Fees of January & Indah Water</div>
+            </div>
+        </div>
+
+        <!-- Footer stays at the bottom -->
+        <div class="footer">
+            *THIS IS COMPUTER GENERATED NO SIGNATURE REQUIRED.
+        </div>
+    </div>
+
+    <script>
+        const monthMap = {
+            "jan": "January", "feb": "February", "mar": "March", "apr": "April",
+            "may": "May", "jun": "June", "jul": "July", "aug": "August",
+            "sep": "September", "oct": "October", "nov": "November", "dec": "December"
+        };
+
+        function numberToEnglish(n) {
+            const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const scales = ['', 'Thousand', 'Million'];
+            let num = Math.floor(n);
+            if (num === 0) return 'Zero';
+            function chunk(n) {
+                let str = '';
+                if (n >= 100) { str += units[Math.floor(n / 100)] + ' Hundred '; n %= 100; }
+                if (n >= 20) { str += tens[Math.floor(n / 10)] + ' '; n %= 10; }
+                if (n > 0) str += units[n] + ' ';
+                return str;
+            }
+            let result = '', i = 0;
+            while (num > 0) {
+                let rem = num % 1000;
+                if (rem > 0) result = chunk(rem) + scales[i] + ' ' + result;
+                num = Math.floor(num / 1000); i++;
+            }
+            return result.trim() + ' Only';
+        }
+
+        function update() {
+            const dateStr = document.getElementById('inDate').value;
+            const rental = parseFloat(document.getElementById('inRental').value) || 0;
+            const indah = parseFloat(document.getElementById('inIndah').value) || 0;
+            const total = rental + indah;
+
+            document.getElementById('outDate').innerText = dateStr;
+            document.getElementById('outFrom').innerText = document.getElementById('inFrom').value;
+            document.getElementById('outRental').innerText = rental.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('outIndah').innerText = indah.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('outTotal').innerText = total.toLocaleString('en-US', {minimumFractionDigits: 2});
+            document.getElementById('outWords').innerText = numberToEnglish(total);
+
+            let fullMonth = "[Month]";
+            const words = dateStr.toLowerCase().split(' ');
+            for (let w of words) {
+                for (let key in monthMap) {
+                    if (w.includes(key)) fullMonth = monthMap[key];
+                }
+            }
+            document.getElementById('outBeing').innerText = `Rental Fees of ${fullMonth} & Indah Water`;
+        }
+
+        document.querySelectorAll('input').forEach(el => el.addEventListener('input', update));
+
+        function generatePDF() {
+            const element = document.getElementById('receipt-area');
+            const opt = {
+                margin: 0,
+                filename: 'Official_Receipt.pdf',
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        update();
+    </script>
+</body>
+</html>
